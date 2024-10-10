@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ProyectoTickets</string>
+    <string name="login">Iniciar Sesión</string>
+    <!-- Otros textos y elementos -->
+
+    <!-- Array para los tipos de usuario -->
+    <string-array name="tipos_usuario">
+        <item>Trabajador</item>
+        <item>Técnico</item>
+        <item>Administrador</item>
+    </string-array>
+</resources>

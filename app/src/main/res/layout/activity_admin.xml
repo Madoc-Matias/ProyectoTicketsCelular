@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Título del administrador -->
+        <TextView
+            android:id="@+id/adminTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:paddingBottom="16dp"
+            android:text="Panel de Administrador"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <!-- Campo para el ID del usuario -->
+        <EditText
+            android:id="@+id/editTextUserId"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="ID de Usuario"
+            android:inputType="number"
+            android:padding="12dp" />
+
+        <!-- Botón para agregar usuario -->
+        <Button
+            android:id="@+id/btnAgregarUsuario"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Agregar Usuario" />
+
+        <!-- Botón para bloquear usuario -->
+        <Button
+            android:id="@+id/btnBloquearUsuario"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Bloquear Usuario" />
+
+        <!-- Botón para desbloquear usuario -->
+        <Button
+            android:id="@+id/btnDesbloquearUsuario"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Desbloquear Usuario" />
+
+        <!-- Botón para ver la lista de usuarios -->
+        <Button
+            android:id="@+id/btnVerUsuarios"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Ver Usuarios" />
+
+        <!-- Botón para blanquear la contraseña -->
+        <Button
+            android:id="@+id/btnBlanquearContraseña"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Blanquear Contraseña" />
+
+        <!-- Campo para el ID del ticket -->
+        <EditText
+            android:id="@+id/editTextTicketId"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:hint="ID de Ticket"
+            android:inputType="number"
+            android:padding="12dp" />
+
+        <!-- Botón para reabrir ticket -->
+        <Button
+            android:id="@+id/btnReabrirTicket"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Reabrir Ticket" />
+
+        <!-- ListView para mostrar la lista de tickets -->
+        <ListView
+            android:id="@+id/listTickets"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_marginTop="16dp" />
+
+        <!-- ListView para mostrar la lista de comentarios -->
+        <ListView
+            android:id="@+id/listComentarios"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_marginTop="16dp" />
+        <Button
+            android:id="@+id/btnVerComentarios"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Ver Comentarios de Técnicos"
+            android:layout_marginTop="16dp"/>
+
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
