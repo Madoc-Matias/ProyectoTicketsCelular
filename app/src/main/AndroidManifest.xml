@@ -45,6 +45,10 @@
             android:name=".UserListActivity"
             android:exported="false" >
 </activity>
+        <activity
+            android:name=".CambiarContrasenaActivity"
+            android:exported="false" >
+        </activity>
     </application>
 
 </manifest>

@@ -55,21 +55,7 @@
             android:layout_marginTop="8dp"
             android:text="Liberar Ticket" />
 
-        <!-- TextField para agregar comentario -->
-        <EditText
-            android:id="@+id/editTextComentario"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Escribe un comentario aquí..."
-            android:layout_marginTop="16dp" />
 
-        <!-- Botón para agregar comentario -->
-        <Button
-            android:id="@+id/btnAgregarComentario"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Agregar Comentario"
-            android:layout_marginTop="8dp" />
 
     </LinearLayout>
 

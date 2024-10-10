@@ -32,15 +32,16 @@ public class UserListActivity extends AppCompatActivity {
         SQLiteDatabase db = dbHelper.getReadableDatabase();
 
         // Obtener todos los usuarios de la tabla Usuarios, incluyendo la contraseña
-        Cursor cursor = db.rawQuery("SELECT nombre, tipo_usuario, contraseña FROM Usuarios", null);
+        Cursor cursor = db.rawQuery("SELECT id, nombre, tipo_usuario, contraseña FROM Usuarios", null);
         if (cursor.moveToFirst()) {
             do {
-                String nombre = cursor.getString(0);
-                String tipoUsuario = cursor.getString(1);
-                String password = cursor.getString(2);  // Obtener la contraseña
+                String id = cursor.getString(0);
+                String nombre = cursor.getString(1);
+                String tipoUsuario = cursor.getString(2);
+                String password = cursor.getString(3);  // Obtener la contraseña
 
                 // Añadir nombre, tipo de usuario y contraseña a la lista de usuarios
-                usuarios.add("Nombre: " + nombre + " - Tipo: " + tipoUsuario + " - Contraseña: " + password);
+                usuarios.add("ID: " + id + "- Nombre: " + nombre + " - Tipo: " + tipoUsuario + " - Contraseña: " + password);
             } while (cursor.moveToNext());
         }
         cursor.close();

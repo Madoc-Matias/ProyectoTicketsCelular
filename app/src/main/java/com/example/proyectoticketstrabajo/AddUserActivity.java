@@ -1,5 +1,7 @@
 package com.example.proyectoticketstrabajo;
 
+import android.content.ContentValues;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.view.View;
@@ -42,7 +44,6 @@ public class AddUserActivity extends AppCompatActivity {
     private void agregarUsuario() {
         String nombreUsuario = editTextUserName.getText().toString().trim();
         String tipoUsuario = spinnerTipoUsuario.getSelectedItem().toString();
-        String password = "12345";  // Contraseña temporal
 
         // Validación de campo vacío
         if (nombreUsuario.isEmpty()) {
@@ -52,10 +53,26 @@ public class AddUserActivity extends AppCompatActivity {
 
         // Insertar el usuario en la base de datos
         SQLiteDatabase db = dbHelper.getWritableDatabase();
-        db.execSQL("INSERT INTO Usuarios (nombre, tipo_usuario, contraseña) VALUES (?, ?, ?)",
-                new String[]{nombreUsuario, tipoUsuario, password});
+        ContentValues values = new ContentValues();
+        values.put("nombre", nombreUsuario);
+        values.put("tipo_usuario", tipoUsuario);
+        values.put("contraseña", "");  // Contraseña vacía temporalmente
 
-        Toast.makeText(this, "Usuario agregado correctamente", Toast.LENGTH_SHORT).show();
-        finish();  // Cerrar la actividad
+        long nuevoId = db.insert("Usuarios", null, values);  // Insertar y obtener el ID generado
+
+        if (nuevoId != -1) {
+            // Actualizar la contraseña para que sea igual al ID
+            ContentValues updateValues = new ContentValues();
+            updateValues.put("contraseña", String.valueOf(nuevoId));  // Contraseña igual al ID
+
+            db.update("Usuarios", updateValues, "id=?", new String[]{String.valueOf(nuevoId)});
+
+            Toast.makeText(this, "Usuario agregado correctamente con ID: " + nuevoId, Toast.LENGTH_SHORT).show();
+            finish();  // Cerrar la actividad
+        } else {
+            Toast.makeText(this, "Error al agregar el usuario", Toast.LENGTH_SHORT).show();
+        }
+
+        db.close();  // Cerrar la base de datos
     }
 }

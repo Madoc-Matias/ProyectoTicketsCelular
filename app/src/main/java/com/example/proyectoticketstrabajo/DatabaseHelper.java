@@ -104,9 +104,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = null;
         try {
-            // Usamos el ID para autenticar al usuario
+            // Consulta para autenticar al usuario
             String query = "SELECT * FROM " + TABLE_USUARIOS + " WHERE " + COLUMN_ID + "=? AND " + COLUMN_CONTRASEÑA + "=?";
             cursor = db.rawQuery(query, new String[]{id, password});
+
+            // Verificar si la contraseña es igual al ID (no permitir login)
+            if (password.equals(id)) {
+                Log.e("DatabaseHelper", "La contraseña no puede ser igual al ID.");
+                return false;
+            }
 
             boolean isAuthenticated = cursor.getCount() > 0;
             cursor.close();
@@ -121,6 +127,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             db.close();
         }
     }
+
 
     public String getUserType(String id) {
         SQLiteDatabase db = this.getReadableDatabase();

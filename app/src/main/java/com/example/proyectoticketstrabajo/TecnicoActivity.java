@@ -36,8 +36,7 @@ public class TecnicoActivity extends AppCompatActivity {
         btnTomarTicket = findViewById(R.id.btnTomarTicket);
         btnResolverTicket = findViewById(R.id.btnResolverTicket);
         btnLiberarTicket = findViewById(R.id.btnLiberarTicket);
-        btnAgregarComentario = findViewById(R.id.btnAgregarComentario);
-        editTextComentario = findViewById(R.id.editTextComentario);
+
 
         // Inicializar DatabaseHelper
         dbHelper = new DatabaseHelper(this);
@@ -87,21 +86,7 @@ public class TecnicoActivity extends AppCompatActivity {
             }
         });
 
-        // Evento para agregar comentario
-        btnAgregarComentario.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String comentario = editTextComentario.getText().toString().trim();
 
-                if (selectedTicketID != -1 && !comentario.isEmpty()) {
-                    dbHelper.agregarComentario(selectedTicketID, Integer.parseInt(tecnicoID), comentario);
-                    editTextComentario.setText("");  // Limpiar el campo de texto
-                    Toast.makeText(TecnicoActivity.this, "Comentario agregado", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(TecnicoActivity.this, "Selecciona un ticket y escribe un comentario", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
 
         // Evento para seleccionar un ticket de la lista
         listViewTickets.setOnItemClickListener(new AdapterView.OnItemClickListener() {

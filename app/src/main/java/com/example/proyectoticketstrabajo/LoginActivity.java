@@ -13,7 +13,7 @@ import androidx.appcompat.app.AppCompatActivity;
 public class LoginActivity extends AppCompatActivity {
 
     private EditText editTextID, editTextPassword;
-    private Button btnLogin;
+    private Button btnLogin, btnCambiarContraseña;
     private DatabaseHelper dbHelper;
 
     @Override
@@ -25,6 +25,7 @@ public class LoginActivity extends AppCompatActivity {
         editTextID = findViewById(R.id.editTextID);
         editTextPassword = findViewById(R.id.editTextPassword);
         btnLogin = findViewById(R.id.btnLogin);
+        btnCambiarContraseña = findViewById(R.id.btnCambiarContraseña);
 
         // Inicializar la base de datos
         dbHelper = new DatabaseHelper(this);
@@ -45,10 +46,19 @@ public class LoginActivity extends AppCompatActivity {
                 try {
                     // Verificar credenciales usando DatabaseHelper
                     if (dbHelper.authenticateUser(id, password)) {
+
+                        // Verificar si la contraseña es igual al ID
+                        if (password.equals(id)) {
+                            // Mostrar mensaje específico
+                            Toast.makeText(LoginActivity.this, "La contraseña no puede ser igual al ID. Cambie la contraseña.", Toast.LENGTH_SHORT).show();
+                            return;  // Detener el flujo y pedir que cambie la contraseña
+                        }
+
                         // Verificar si el usuario está bloqueado
                         if (dbHelper.isUserBlocked(id)) {
+                            // Mostrar mensaje específico
                             Toast.makeText(LoginActivity.this, "El usuario está bloqueado. Contacte al administrador.", Toast.LENGTH_SHORT).show();
-                            return;
+                            return;  // Detener el flujo ya que el usuario está bloqueado
                         }
 
                         // Redirigir según el tipo de usuario
@@ -74,7 +84,8 @@ public class LoginActivity extends AppCompatActivity {
                         startActivity(intent);
                         finish(); // Cerrar la actividad de login
                     } else {
-                        Toast.makeText(LoginActivity.this, "Credenciales incorrectas", Toast.LENGTH_SHORT).show();
+                        // Mostrar mensaje cuando las credenciales no coinciden
+                        Toast.makeText(LoginActivity.this, "Credenciales incorrectas. Verifique su ID o contraseña.", Toast.LENGTH_SHORT).show();
                     }
                 } catch (Exception e) {
                     // Manejo de errores
@@ -83,6 +94,20 @@ public class LoginActivity extends AppCompatActivity {
                 }
             }
         });
+        // Evento para cambiar la contraseña
+        btnCambiarContraseña.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String id = editTextID.getText().toString().trim();  // Obtener el ID del usuario
+                if (!id.isEmpty()) {
+                    Intent intent = new Intent(LoginActivity.this, CambiarContrasenaActivity.class);
+                    intent.putExtra("user_id", id);  // Pasar el ID del usuario logueado a CambiarContrasenaActivity
+                    startActivity(intent);
+                } else {
+                    Toast.makeText(LoginActivity.this, "Ingrese su ID primero", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
     }
 }
-
