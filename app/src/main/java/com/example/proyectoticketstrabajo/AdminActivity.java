@@ -125,20 +125,54 @@ public class AdminActivity extends AppCompatActivity {
 
     private void reabrirTicket() {
         if (selectedTicketId != null) {
-            SQLiteDatabase db = dbHelper.getWritableDatabase();
-            ContentValues values = new ContentValues();
-            values.put("estado", "Reabierto"); // Cambiar el estado a "Reabierto"
-            int rowsAffected = db.update("Tickets", values, "id=?", new String[]{selectedTicketId});
-            if (rowsAffected > 0) {
-                Toast.makeText(this, "Ticket reabierto exitosamente", Toast.LENGTH_SHORT).show();
-                cargarTickets(); // Recargar la lista de tickets
-            } else {
-                Toast.makeText(this, "Error al reabrir ticket", Toast.LENGTH_SHORT).show();
+            SQLiteDatabase db = dbHelper.getReadableDatabase();
+
+            try {
+                // Obtener el técnico asignado al ticket
+                String query = "SELECT tecnico_id FROM Tickets WHERE id = ?";
+                Cursor cursor = db.rawQuery(query, new String[]{selectedTicketId});
+
+                if (cursor.moveToFirst()) {
+                    int tecnicoID = cursor.getInt(0);  // Obtener el ID del técnico
+
+                    // Verificar si existe un técnico asignado
+                    if (tecnicoID != 0) {
+                        // Reabrir el ticket
+                        ContentValues values = new ContentValues();
+                        values.put("estado", "Reabierto");  // Cambiar el estado a "Reabierto"
+                        int rowsAffected = db.update("Tickets", values, "id=?", new String[]{selectedTicketId});
+
+                        if (rowsAffected > 0) {
+                            Toast.makeText(this, "Ticket reabierto exitosamente", Toast.LENGTH_SHORT).show();
+                            cargarTickets();  // Recargar la lista de tickets
+
+                            // Incrementar una falla al técnico asignado
+                            dbHelper.incrementarFallaTecnico(tecnicoID);
+                            Toast.makeText(this, "Se ha incrementado una marca al técnico.", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(this, "Error al reabrir el ticket", Toast.LENGTH_SHORT).show();
+                        }
+                    } else {
+                        Toast.makeText(this, "El ticket no tiene técnico asignado.", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Toast.makeText(this, "No se encontró el técnico asignado.", Toast.LENGTH_SHORT).show();
+                }
+
+                cursor.close();
+            } catch (Exception e) {
+                Toast.makeText(this, "Error al procesar el ticket: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            } finally {
+                db.close();
             }
         } else {
             Toast.makeText(this, "Seleccione un ticket", Toast.LENGTH_SHORT).show();
         }
     }
+
+
+
+
 
     // Cargar los tickets atendidos para reabrir
     private void cargarTickets() {
@@ -166,21 +200,4 @@ public class AdminActivity extends AppCompatActivity {
 
 
 
-    // Cargar comentarios de un ticket específico
-    private void cargarComentarios(String ticketId) {
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT comentario, fecha FROM Comentarios WHERE ticket_id = ?", new String[]{ticketId});
-
-        List<String> comentariosList = new ArrayList<>();
-        if (cursor.moveToFirst()) {
-            do {
-                String comentario = cursor.getString(0) + " - " + cursor.getString(1);
-                comentariosList.add(comentario);
-            } while (cursor.moveToNext());
-        }
-        cursor.close();
-
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, comentariosList);
-        listComentarios.setAdapter(adapter);
-    }
 }

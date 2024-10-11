@@ -6,19 +6,21 @@ public class Ticket {
     private String titulo;
     private String descripcion;
     private String estado;
-    private int fallos;  // Nuevo campo para almacenar los fallos
+    private int fallos;
+    private int tecnicoId;  // Nuevo campo para el ID del técnico asignado
 
-    // Constructor por defecto (vacío)
+    // Constructor por defecto
     public Ticket() {
     }
 
     // Constructor con parámetros
-    public Ticket(int id, String titulo, String descripcion, String estado, int fallos) {
+    public Ticket(int id, String titulo, String descripcion, String estado, int fallos, int tecnicoId) {
         this.id = id;
         this.titulo = titulo;
         this.descripcion = descripcion;
         this.estado = estado;
         this.fallos = fallos;
+        this.tecnicoId = tecnicoId;  // Asignar ID del técnico
     }
 
     // Getters y setters
@@ -61,5 +63,13 @@ public class Ticket {
     public void setFallos(int fallos) {
         this.fallos = fallos;
     }
-}
 
+    // En la clase Ticket, asegurarse de que el método getTecnicoId esté bien implementado:
+    public int getTecnicoId() {
+        return tecnicoId;
+    }
+
+    public void setTecnicoId(int tecnicoId) {
+        this.tecnicoId = tecnicoId;
+    }
+}

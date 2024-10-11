@@ -10,13 +10,12 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class TrabajadorActivity extends AppCompatActivity {
 
     private EditText editTextTitulo, editTextDescripcion;
-    private Button buttonCrearTicket, buttonConfirmarResuelto;
+    private Button buttonCrearTicket, buttonConfirmarResuelto, buttonReabrirTicket;
     private ListView listViewTickets;
     private TicketAdapter ticketAdapter;
     private DatabaseHelper databaseHelper;
@@ -34,6 +33,7 @@ public class TrabajadorActivity extends AppCompatActivity {
         editTextDescripcion = findViewById(R.id.editTextDescripcion);
         buttonCrearTicket = findViewById(R.id.buttonCrearTicket);
         buttonConfirmarResuelto = findViewById(R.id.buttonConfirmarResuelto);
+        buttonReabrirTicket = findViewById(R.id.buttonReabrirTicket);  // Nuevo botón para reabrir ticket
         listViewTickets = findViewById(R.id.listViewTickets);
 
         // Inicializar la base de datos y el adaptador
@@ -51,7 +51,7 @@ public class TrabajadorActivity extends AppCompatActivity {
                 // Almacenar el ticket seleccionado
                 ticketSeleccionado = (Ticket) parent.getItemAtPosition(position);
 
-                // Opcional: Mostrar un mensaje para confirmar la selección
+                // Mostrar mensaje para confirmar la selección
                 Toast.makeText(TrabajadorActivity.this, "Seleccionado: " + ticketSeleccionado.getTitulo(), Toast.LENGTH_SHORT).show();
             }
         });
@@ -74,22 +74,74 @@ public class TrabajadorActivity extends AppCompatActivity {
             }
         });
 
-        // Acción del botón para confirmar que el ticket fue resuelto
+
+// Acción del botón para confirmar que el ticket fue resuelto
         buttonConfirmarResuelto.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (ticketSeleccionado != null) {
-                    // Confirmar el ticket como resuelto
-                    databaseHelper.updateTicketStatus(ticketSeleccionado.getId(), "Finalizado");
-                    Toast.makeText(TrabajadorActivity.this, "Ticket confirmado como resuelto", Toast.LENGTH_SHORT).show();
-                    // Actualizar la lista de tickets
-                    ticketAdapter.updateTickets(databaseHelper.getTicketsByTrabajador(trabajadorID));
-                    ticketSeleccionado = null;  // Restablecer la selección
+                    // Verificar si el ticket tiene un técnico asignado
+                    int tecnicoID = ticketSeleccionado.getTecnicoId();  // Obtener el técnico asignado al ticket
+
+                    if (tecnicoID > 0) {  // Verificar que el técnico está asignado
+                        // Confirmar el ticket como resuelto
+                        databaseHelper.updateTicketStatus(ticketSeleccionado.getId(), "Finalizado");
+                        Toast.makeText(TrabajadorActivity.this, "Ticket confirmado como resuelto", Toast.LENGTH_SHORT).show();
+
+                        // Descontar una falla al técnico asignado
+                        databaseHelper.descontarFallaTecnico(tecnicoID);
+                        Toast.makeText(TrabajadorActivity.this, "Se descontó una falla al técnico", Toast.LENGTH_SHORT).show();
+
+                        // Actualizar la lista de tickets
+                        ticketAdapter.updateTickets(databaseHelper.getTicketsByTrabajador(trabajadorID));
+                        ticketSeleccionado = null;  // Restablecer la selección
+                    } else {
+                        Toast.makeText(TrabajadorActivity.this, "Este ticket no tiene técnico asignado.", Toast.LENGTH_SHORT).show();
+                    }
                 } else {
-                    Toast.makeText(TrabajadorActivity.this, "Seleccione un ticket", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(TrabajadorActivity.this, "Seleccione un ticket para confirmar como resuelto", Toast.LENGTH_SHORT).show();
                 }
             }
         });
+
+
+
+        buttonReabrirTicket.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (ticketSeleccionado != null) {
+                    // Verificar si el ticket tiene un técnico asignado
+                    int tecnicoID = ticketSeleccionado.getTecnicoId();  // Obtener el técnico asignado al ticket
+
+                    if (tecnicoID > 0) {  // Verificar que el técnico está asignado
+                        try {
+                            // Reabrir el ticket
+                            databaseHelper.updateTicketStatus(ticketSeleccionado.getId(), "Reabierto");
+                            Toast.makeText(TrabajadorActivity.this, "Ticket reabierto", Toast.LENGTH_SHORT).show();
+
+                            // Incrementar la cantidad de fallas del técnico asignado
+                            databaseHelper.incrementarFallaTecnico(tecnicoID);
+                            Toast.makeText(TrabajadorActivity.this, "Se incrementó una falla al técnico", Toast.LENGTH_SHORT).show();
+
+                            // Actualizar la lista de tickets
+                            ticketAdapter.updateTickets(databaseHelper.getTicketsByTrabajador(trabajadorID));
+                            ticketSeleccionado = null;  // Restablecer la selección
+                        } catch (Exception e) {
+                            Toast.makeText(TrabajadorActivity.this, "Error al reabrir el ticket: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    } else {
+                        Toast.makeText(TrabajadorActivity.this, "Este ticket no tiene técnico asignado.", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Toast.makeText(TrabajadorActivity.this, "Seleccione un ticket para reabrir", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
+
+
+
     }
 }
+
 

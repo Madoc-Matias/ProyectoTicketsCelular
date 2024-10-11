@@ -44,33 +44,47 @@ public class TecnicoActivity extends AppCompatActivity {
         // Cargar los tickets (Atendidos, No atendidos y Reabiertos)
         cargarTickets();
 
-        // Evento para tomar un ticket
+
+// Evento para tomar un ticket
         btnTomarTicket.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (selectedTicketID != -1) {
-                    dbHelper.tomarTicket(selectedTicketID, Integer.parseInt(tecnicoID));
-                    cargarTickets();
-                    Toast.makeText(TecnicoActivity.this, "Ticket tomado", Toast.LENGTH_SHORT).show();
+                    // Verificar si el técnico puede tomar otro ticket
+                    if (dbHelper.puedeTomarMasTickets(Integer.parseInt(tecnicoID))) {
+                        dbHelper.tomarTicket(selectedTicketID, Integer.parseInt(tecnicoID));
+                        cargarTickets();
+                        Toast.makeText(TecnicoActivity.this, "Ticket tomado", Toast.LENGTH_SHORT).show();
+                    } else {
+                        // Mostrar mensaje si el técnico ya tiene 3 tickets asignados
+                        Toast.makeText(TecnicoActivity.this, "No puedes tomar más de 3 tickets.", Toast.LENGTH_SHORT).show();
+                    }
                 } else {
                     Toast.makeText(TecnicoActivity.this, "Selecciona un ticket", Toast.LENGTH_SHORT).show();
                 }
             }
         });
 
+
+
         // Evento para resolver un ticket
         btnResolverTicket.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (selectedTicketID != -1) {
-                    dbHelper.resolverTicket(selectedTicketID);
-                    cargarTickets();
-                    Toast.makeText(TecnicoActivity.this, "Ticket resuelto", Toast.LENGTH_SHORT).show();
+                    try {
+                        dbHelper.resolverTicket(selectedTicketID);
+                        cargarTickets();  // Recargar los tickets después de resolver
+                        Toast.makeText(TecnicoActivity.this, "Ticket resuelto", Toast.LENGTH_SHORT).show();
+                    } catch (Exception e) {
+                        Toast.makeText(TecnicoActivity.this, "Error al resolver el ticket: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
                 } else {
-                    Toast.makeText(TecnicoActivity.this, "Selecciona un ticket", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(TecnicoActivity.this, "Seleccione un ticket", Toast.LENGTH_SHORT).show();
                 }
             }
         });
+
 
         // Evento para liberar un ticket
         btnLiberarTicket.setOnClickListener(new View.OnClickListener() {
@@ -106,4 +120,3 @@ public class TecnicoActivity extends AppCompatActivity {
         listViewTickets.setAdapter(ticketAdapter);
     }
 }
-

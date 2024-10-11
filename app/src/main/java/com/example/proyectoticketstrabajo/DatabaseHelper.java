@@ -14,7 +14,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     // Definir constantes para la base de datos
     private static final String DATABASE_NAME = "TicketSystemDB";
-    private static final int DATABASE_VERSION = 4;
+    private static final int DATABASE_VERSION = 5;
 
     // Tabla de usuarios
     private static final String TABLE_USUARIOS = "Usuarios";
@@ -23,6 +23,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String COLUMN_TIPO_USUARIO = "tipo_usuario";
     private static final String COLUMN_CONTRASEÑA = "contraseña";
     private static final String COLUMN_BLOQUEADO = "bloqueado";
+    private static final String COLUMN_FALLAS = "fallas"; // Nueva columna para almacenar fallas
 
     // Tabla de tickets
     private static final String TABLE_TICKETS = "Tickets";
@@ -31,7 +32,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String COLUMN_ESTADO = "estado";
     private static final String COLUMN_TRABAJADOR_ID = "trabajador_id";
     private static final String COLUMN_TECNICO_ID = "tecnico_id";
-    private static final String COLUMN_FALLOS = "fallos";
+
 
     // Tabla de comentarios
     private static final String TABLE_COMENTARIOS = "Comentarios";
@@ -51,7 +52,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 COLUMN_NOMBRE + " TEXT, " +
                 COLUMN_TIPO_USUARIO + " TEXT, " +
                 COLUMN_CONTRASEÑA + " TEXT, " +
-                COLUMN_BLOQUEADO + " INTEGER DEFAULT 0)";
+                COLUMN_BLOQUEADO + " INTEGER DEFAULT 0, " +
+                COLUMN_FALLAS + " INTEGER DEFAULT 0)";  // Nueva columna de fallas
         db.execSQL(createTableUsuarios);
 
         // Crear tabla de tickets
@@ -62,7 +64,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 COLUMN_ESTADO + " TEXT DEFAULT 'No atendido', " +
                 COLUMN_TRABAJADOR_ID + " INTEGER, " +
                 COLUMN_TECNICO_ID + " INTEGER, " +
-                COLUMN_FALLOS + " INTEGER DEFAULT 0, " +
+
                 "FOREIGN KEY(" + COLUMN_TRABAJADOR_ID + ") REFERENCES " + TABLE_USUARIOS + "(" + COLUMN_ID + "), " +
                 "FOREIGN KEY(" + COLUMN_TECNICO_ID + ") REFERENCES " + TABLE_USUARIOS + "(" + COLUMN_ID + "))";
         db.execSQL(createTableTickets);
@@ -80,6 +82,18 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         // Insertar usuario administrador por defecto
         insertarUsuarioAdmin(db);
+    }
+    // Obtener el ID del técnico asignado a un ticket específico
+    public int getTecnicoIdFromTicket(int ticketID) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT tecnico_id FROM Tickets WHERE id = ?", new String[]{String.valueOf(ticketID)});
+        int tecnicoID = -1;
+        if (cursor.moveToFirst()) {
+            tecnicoID = cursor.getInt(0);
+        }
+        cursor.close();
+        db.close();
+        return tecnicoID;
     }
 
     private void insertarUsuarioAdmin(SQLiteDatabase db) {
@@ -128,12 +142,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
-
     public String getUserType(String id) {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = null;
         try {
-            String query = "SELECT " + COLUMN_TIPO_USUARIO + " FROM " + TABLE_USUARIOS + " WHERE " + COLUMN_ID + "=?";  // Cambiado para usar el ID query = "SELECT " + COLUMN_TIPO_USUARIO + " FROM " + TABLE_USUARIOS + " WHERE " + COLUMN_NOMBRE + "=?";
+            String query = "SELECT " + COLUMN_TIPO_USUARIO + " FROM " + TABLE_USUARIOS + " WHERE " + COLUMN_ID + "=?";
             cursor = db.rawQuery(query, new String[]{id});
             if (cursor != null && cursor.moveToFirst()) {
                 return cursor.getString(0);
@@ -154,7 +167,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = null;
         try {
-            String query = "SELECT " + COLUMN_BLOQUEADO + " FROM " + TABLE_USUARIOS + " WHERE " + COLUMN_ID + "=?";  // Cambiado para usar el ID
+            String query = "SELECT " + COLUMN_BLOQUEADO + " FROM " + TABLE_USUARIOS + " WHERE " + COLUMN_ID + "=?";
             cursor = db.rawQuery(query, new String[]{id});
             if (cursor != null && cursor.moveToFirst()) {
                 return cursor.getInt(0) == 1;
@@ -171,9 +184,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
-    // Métodos para insertar, actualizar y obtener tickets permanecen igual
-
-
     // ========== MÉTODOS PARA LA GESTIÓN DE TICKETS ==========
 
     public void insertTicket(String titulo, String descripcion, int trabajadorID) {
@@ -189,7 +199,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public ArrayList<Ticket> getTicketsByTrabajador(int trabajadorID) {
         ArrayList<Ticket> tickets = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
-        String query = "SELECT * FROM " + TABLE_TICKETS + " WHERE " + COLUMN_TRABAJADOR_ID + "=?";
+
+        // Asegurarse de obtener el técnico asignado en la consulta
+        String query = "SELECT * FROM " + TABLE_TICKETS + " WHERE " + COLUMN_TRABAJADOR_ID + "=? AND " + COLUMN_ESTADO + " != 'Finalizado'";
+
         Cursor cursor = db.rawQuery(query, new String[]{String.valueOf(trabajadorID)});
 
         if (cursor.moveToFirst()) {
@@ -199,7 +212,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 ticket.setTitulo(cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TITULO)));
                 ticket.setDescripcion(cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_DESCRIPCION)));
                 ticket.setEstado(cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ESTADO)));
-                ticket.setFallos(cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_FALLOS)));
+
+                ticket.setTecnicoId(cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_TECNICO_ID)));  // Asegúrate de obtener el tecnico_id
                 tickets.add(ticket);
             } while (cursor.moveToNext());
         }
@@ -209,6 +223,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return tickets;
     }
 
+
     public void updateTicketStatus(int ticketId, String estado) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
@@ -217,16 +232,34 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.close();
     }
 
-    // ========== MÉTODOS ADICIONALES ==========
+    // ========== MÉTODOS ADICIONALES PARA GESTIÓN DE TICKETS ==========
 
     public void tomarTicket(int ticketID, int tecnicoID) {
         SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put(COLUMN_ESTADO, "Atendido");
-        values.put(COLUMN_TECNICO_ID, tecnicoID);
-        db.update(TABLE_TICKETS, values, COLUMN_ID + "=?", new String[]{String.valueOf(ticketID)});
+
+        // Verificar cuántos tickets ya tiene asignados el técnico en estado 'No atendido' o 'Atendido'
+        Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM " + TABLE_TICKETS + " WHERE " + COLUMN_TECNICO_ID + " = ? AND " + COLUMN_ESTADO + " IN ('No atendido', 'Atendido')", new String[]{String.valueOf(tecnicoID)});
+        cursor.moveToFirst();
+        int numTicketsAsignados = cursor.getInt(0);  // Obtener el número de tickets asignados en esos estados
+        cursor.close();
+
+        // Si el técnico tiene menos de 3 tickets en esos estados, permitir que tome otro
+        if (numTicketsAsignados < 3) {
+            ContentValues values = new ContentValues();
+            values.put(COLUMN_ESTADO, "Atendido");  // Cambiar el estado a "Atendido"
+            values.put(COLUMN_TECNICO_ID, tecnicoID);  // Asignar el ID del técnico
+            db.update(TABLE_TICKETS, values, COLUMN_ID + "=?", new String[]{String.valueOf(ticketID)});
+            Log.d("DatabaseHelper", "Ticket asignado al técnico con ID: " + tecnicoID);
+        } else {
+            // Si ya tiene 3 tickets en estado 'No atendido' o 'Atendido', no permitir tomar más
+            Log.d("DatabaseHelper", "El técnico con ID " + tecnicoID + " ya tiene 3 tickets en estado 'No atendido' o 'Atendido'.");
+        }
+
         db.close();
     }
+
+
+
 
     public void resolverTicket(int ticketID) {
         SQLiteDatabase db = this.getWritableDatabase();
@@ -255,11 +288,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.close();
     }
 
+    // Obtener tickets en los estados 'Atendido', 'No atendido' y 'Reabierto'
     public ArrayList<Ticket> obtenerTicketsAtendidosNoAtendidosYReabiertos() {
         ArrayList<Ticket> tickets = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
 
-        // Consulta para obtener tickets con estado 'Atendido', 'No atendido' o 'Reabierto'
         String query = "SELECT * FROM " + TABLE_TICKETS + " WHERE " + COLUMN_ESTADO + " IN ('Atendido', 'No atendido', 'Reabierto')";
 
         Cursor cursor = db.rawQuery(query, null);
@@ -271,7 +304,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 ticket.setTitulo(cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TITULO)));
                 ticket.setDescripcion(cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_DESCRIPCION)));
                 ticket.setEstado(cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ESTADO)));
-                ticket.setFallos(cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_FALLOS)));
+
                 tickets.add(ticket);
             } while (cursor.moveToNext());
         }
@@ -280,9 +313,74 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.close();
         return tickets;
     }
+    public boolean puedeTomarMasTickets(int tecnicoID) {
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        // Contar cuántos tickets en estado 'No atendido' o 'Atendido' tiene el técnico
+        Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM " + TABLE_TICKETS + " WHERE " + COLUMN_TECNICO_ID + " = ? AND " + COLUMN_ESTADO + " IN ('No atendido', 'Atendido')", new String[]{String.valueOf(tecnicoID)});
+        cursor.moveToFirst();
+        int numTicketsAsignados = cursor.getInt(0);  // Obtener el número de tickets en esos estados
+        cursor.close();
+        db.close();
+
+        // Retornar true si tiene menos de 3 tickets en esos estados
+        return numTicketsAsignados < 3;
+    }
 
 
 
 
+    // ========== MÉTODOS PARA MANEJO DE FALLAS ==========
 
+    public void incrementarFallaTecnico(int tecnicoId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        // Incrementar las fallas del técnico
+        db.execSQL("UPDATE " + TABLE_USUARIOS + " SET " + COLUMN_FALLAS + " = " + COLUMN_FALLAS + " + 1 WHERE " + COLUMN_ID + " = ?", new Object[]{tecnicoId});
+
+        // Obtener la cantidad actual de fallas después de incrementarlas
+        Cursor cursor = db.rawQuery("SELECT " + COLUMN_FALLAS + " FROM " + TABLE_USUARIOS + " WHERE " + COLUMN_ID + " = ?", new String[]{String.valueOf(tecnicoId)});
+        if (cursor.moveToFirst()) {
+            int fallasActuales = cursor.getInt(0);
+
+            // Si las fallas llegan a 6, bloquear al técnico
+            if (fallasActuales >= 6) {
+                ContentValues values = new ContentValues();
+                values.put(COLUMN_BLOQUEADO, 1);  // Bloquear al técnico
+                db.update(TABLE_USUARIOS, values, COLUMN_ID + " = ?", new String[]{String.valueOf(tecnicoId)});
+                // Puedes agregar un mensaje de log para seguimiento
+                Log.d("DatabaseHelper", "Técnico con ID " + tecnicoId + " bloqueado por alcanzar 6 fallas.");
+            }
+        }
+
+        cursor.close();
+        db.close();
+    }
+
+    public void descontarFallaTecnico(int tecnicoId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.rawQuery("SELECT " + COLUMN_FALLAS + " FROM " + TABLE_USUARIOS + " WHERE " + COLUMN_ID + " = ?", new String[]{String.valueOf(tecnicoId)});
+        if (cursor.moveToFirst()) {
+            int fallasActuales = cursor.getInt(0);
+            if (fallasActuales > 0) {
+                ContentValues values = new ContentValues();
+                values.put(COLUMN_FALLAS, fallasActuales - 1);
+                db.update(TABLE_USUARIOS, values, COLUMN_ID + " = ?", new String[]{String.valueOf(tecnicoId)});
+            }
+        }
+        cursor.close();
+        db.close();
+    }
+
+    public int obtenerFallasTecnico(int tecnicoId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT " + COLUMN_FALLAS + " FROM " + TABLE_USUARIOS + " WHERE " + COLUMN_ID + " = ?", new String[]{String.valueOf(tecnicoId)});
+        int fallas = 0;
+        if (cursor.moveToFirst()) {
+            fallas = cursor.getInt(0);
+        }
+        cursor.close();
+        db.close();
+        return fallas;
+    }
 }
