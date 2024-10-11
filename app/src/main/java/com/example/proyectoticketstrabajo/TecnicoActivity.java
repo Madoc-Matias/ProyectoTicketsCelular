@@ -6,6 +6,7 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -15,13 +16,15 @@ import java.util.List;
 public class TecnicoActivity extends AppCompatActivity {
 
     private ListView listViewTickets;
-    private Button btnTomarTicket, btnResolverTicket, btnLiberarTicket, btnAgregarComentario;
+    private Button btnTomarTicket, btnResolverTicket, btnLiberarTicket, btnAgregarComentario, btnVerDescripcion;
     private EditText editTextComentario;
+    private TextView textViewDescripcion;  // Nueva declaración
     private DatabaseHelper dbHelper;
     private String tecnicoID;
     private TicketAdapter ticketAdapter;
     private List<Ticket> ticketsList;
     private int selectedTicketID = -1; // Variable para almacenar el ID del ticket seleccionado
+    private Ticket selectedTicket;  // Nueva declaración para el ticket seleccionado
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,7 +39,10 @@ public class TecnicoActivity extends AppCompatActivity {
         btnTomarTicket = findViewById(R.id.btnTomarTicket);
         btnResolverTicket = findViewById(R.id.btnResolverTicket);
         btnLiberarTicket = findViewById(R.id.btnLiberarTicket);
-
+        btnVerDescripcion = findViewById(R.id.buttonVerDescripcion);  // Usar el ID correcto
+        // Inicialización
+        textViewDescripcion = findViewById(R.id.textViewDescripcion);  // Inicialización
+        textViewDescripcion.setVisibility(View.GONE);  // Ocultar por defecto
 
         // Inicializar DatabaseHelper
         dbHelper = new DatabaseHelper(this);
@@ -44,8 +50,7 @@ public class TecnicoActivity extends AppCompatActivity {
         // Cargar los tickets (Atendidos, No atendidos y Reabiertos)
         cargarTickets();
 
-
-// Evento para tomar un ticket
+        // Evento para tomar un ticket
         btnTomarTicket.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -65,7 +70,19 @@ public class TecnicoActivity extends AppCompatActivity {
             }
         });
 
-
+        // Evento para ver la descripción del ticket seleccionado
+        btnVerDescripcion.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (selectedTicket != null) {
+                    // Mostrar la descripción del ticket seleccionado
+                    textViewDescripcion.setText(selectedTicket.getDescripcion());
+                    textViewDescripcion.setVisibility(View.VISIBLE);  // Hacer visible el TextView
+                } else {
+                    Toast.makeText(TecnicoActivity.this, "Selecciona un ticket", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
 
         // Evento para resolver un ticket
         btnResolverTicket.setOnClickListener(new View.OnClickListener() {
@@ -85,7 +102,6 @@ public class TecnicoActivity extends AppCompatActivity {
             }
         });
 
-
         // Evento para liberar un ticket
         btnLiberarTicket.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -100,13 +116,11 @@ public class TecnicoActivity extends AppCompatActivity {
             }
         });
 
-
-
         // Evento para seleccionar un ticket de la lista
         listViewTickets.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Ticket selectedTicket = ticketsList.get(position);
+                selectedTicket = ticketsList.get(position);  // Guardamos el ticket seleccionado
                 selectedTicketID = selectedTicket.getId();  // Guardamos el ID del ticket seleccionado
                 Toast.makeText(TecnicoActivity.this, "Ticket seleccionado: " + selectedTicket.getTitulo(), Toast.LENGTH_SHORT).show();
             }
