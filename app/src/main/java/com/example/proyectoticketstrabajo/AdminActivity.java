@@ -91,20 +91,33 @@ public class AdminActivity extends AppCompatActivity {
 
     private void desbloquearUsuario() {
         String userId = editTextUserId.getText().toString();
+
         if (!userId.isEmpty()) {
             SQLiteDatabase db = dbHelper.getWritableDatabase();
-            ContentValues values = new ContentValues();
-            values.put("bloqueado", 0); // Marcar como desbloqueado
-            int rowsAffected = db.update("Usuarios", values, "id=?", new String[]{userId});
-            if (rowsAffected > 0) {
-                Toast.makeText(this, "Usuario desbloqueado exitosamente", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(this, "Error al desbloquear usuario", Toast.LENGTH_SHORT).show();
+            try {
+                // Desbloquear al usuario
+                ContentValues values = new ContentValues();
+                values.put("bloqueado", 0);  // Marcar como desbloqueado
+
+                int rowsAffected = db.update("Usuarios", values, "id=?", new String[]{userId});
+                if (rowsAffected > 0) {
+                    // Descontar 2 fallas del usuario desbloqueado
+                    dbHelper.descontarFallaTecnico(Integer.parseInt(userId));
+
+                    Toast.makeText(this, "Usuario desbloqueado y 1 fallas descontadas exitosamente", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(this, "Error al desbloquear usuario", Toast.LENGTH_SHORT).show();
+                }
+            } catch (Exception e) {
+                Toast.makeText(this, "Error al procesar el desbloqueo: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            } finally {
+                db.close();
             }
         } else {
             Toast.makeText(this, "Ingrese un ID de usuario", Toast.LENGTH_SHORT).show();
         }
     }
+
 
     private void blanquearContraseña() {
         String userId = editTextUserId.getText().toString();
@@ -146,8 +159,8 @@ public class AdminActivity extends AppCompatActivity {
                             Toast.makeText(this, "Ticket reabierto exitosamente", Toast.LENGTH_SHORT).show();
                             cargarTickets();  // Recargar la lista de tickets
 
-                            // Incrementar una falla al técnico asignado
-                            dbHelper.incrementarFallaTecnico(tecnicoID);
+                            // Incrementar 1 marca al técnico asignado
+                            dbHelper.incrementarFallaTecnicoAdmin(tecnicoID);
                             Toast.makeText(this, "Se ha incrementado una marca al técnico.", Toast.LENGTH_SHORT).show();
                         } else {
                             Toast.makeText(this, "Error al reabrir el ticket", Toast.LENGTH_SHORT).show();
@@ -169,6 +182,7 @@ public class AdminActivity extends AppCompatActivity {
             Toast.makeText(this, "Seleccione un ticket", Toast.LENGTH_SHORT).show();
         }
     }
+
 
 
 

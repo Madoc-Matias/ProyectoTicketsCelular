@@ -271,12 +271,41 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public void liberarTicket(int ticketID) {
         SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put(COLUMN_ESTADO, "No atendido");
-        values.putNull(COLUMN_TECNICO_ID);
-        db.update(TABLE_TICKETS, values, COLUMN_ID + "=?", new String[]{String.valueOf(ticketID)});
-        db.close();
+        try {
+            // Obtener el técnico asignado al ticket
+            String query = "SELECT tecnico_id FROM Tickets WHERE id = ?";
+            Cursor cursor = db.rawQuery(query, new String[]{String.valueOf(ticketID)});
+
+            if (cursor.moveToFirst()) {
+                int tecnicoID = cursor.getInt(0);  // Obtener el ID del técnico
+
+                // Verificar si existe un técnico asignado
+                if (tecnicoID != 0) {
+                    // Cambiar el estado del ticket a "No atendido" y liberar el técnico
+                    ContentValues values = new ContentValues();
+                    values.put(COLUMN_ESTADO, "No atendido");
+                    values.putNull(COLUMN_TECNICO_ID);
+                    db.update(TABLE_TICKETS, values, COLUMN_ID + "=?", new String[]{String.valueOf(ticketID)});
+
+                    // Incrementar la marca del técnico
+                    incrementarFallaTecnicoAdmin(tecnicoID);
+
+                    Log.d("DatabaseHelper", "Ticket liberado y falla incrementada para el técnico con ID: " + tecnicoID);
+                } else {
+                    Log.d("DatabaseHelper", "El ticket no tiene técnico asignado.");
+                }
+            } else {
+                Log.d("DatabaseHelper", "No se encontró el técnico asignado para el ticket.");
+            }
+
+            cursor.close();
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Error al liberar el ticket: " + e.getMessage());
+        } finally {
+            db.close();
+        }
     }
+
 
     public void agregarComentario(int ticketID, int tecnicoID, String comentario) {
         SQLiteDatabase db = this.getWritableDatabase();
@@ -336,7 +365,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
 
         // Incrementar las fallas del técnico
-        db.execSQL("UPDATE " + TABLE_USUARIOS + " SET " + COLUMN_FALLAS + " = " + COLUMN_FALLAS + " + 1 WHERE " + COLUMN_ID + " = ?", new Object[]{tecnicoId});
+        db.execSQL("UPDATE " + TABLE_USUARIOS + " SET " + COLUMN_FALLAS + " = " + COLUMN_FALLAS + " + 2 WHERE " + COLUMN_ID + " = ?", new Object[]{tecnicoId});
 
         // Obtener la cantidad actual de fallas después de incrementarlas
         Cursor cursor = db.rawQuery("SELECT " + COLUMN_FALLAS + " FROM " + TABLE_USUARIOS + " WHERE " + COLUMN_ID + " = ?", new String[]{String.valueOf(tecnicoId)});
@@ -349,7 +378,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 values.put(COLUMN_BLOQUEADO, 1);  // Bloquear al técnico
                 db.update(TABLE_USUARIOS, values, COLUMN_ID + " = ?", new String[]{String.valueOf(tecnicoId)});
                 // Puedes agregar un mensaje de log para seguimiento
-                Log.d("DatabaseHelper", "Técnico con ID " + tecnicoId + " bloqueado por alcanzar 6 fallas.");
+                Log.d("DatabaseHelper", "Técnico con ID " + tecnicoId + " bloqueado por alcanzar 3 fallas.");
             }
         }
 
@@ -360,17 +389,22 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public void descontarFallaTecnico(int tecnicoId) {
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor cursor = db.rawQuery("SELECT " + COLUMN_FALLAS + " FROM " + TABLE_USUARIOS + " WHERE " + COLUMN_ID + " = ?", new String[]{String.valueOf(tecnicoId)});
+
         if (cursor.moveToFirst()) {
             int fallasActuales = cursor.getInt(0);
             if (fallasActuales > 0) {
+                // Descontar hasta 2 fallas, pero evitar valores negativos
+                int nuevasFallas = Math.max(fallasActuales - 2, 0);
                 ContentValues values = new ContentValues();
-                values.put(COLUMN_FALLAS, fallasActuales - 1);
+                values.put(COLUMN_FALLAS, nuevasFallas);
                 db.update(TABLE_USUARIOS, values, COLUMN_ID + " = ?", new String[]{String.valueOf(tecnicoId)});
             }
         }
+
         cursor.close();
         db.close();
     }
+
 
     public int obtenerFallasTecnico(int tecnicoId) {
         SQLiteDatabase db = this.getReadableDatabase();
@@ -383,4 +417,30 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.close();
         return fallas;
     }
+
+    public void incrementarFallaTecnicoAdmin(int tecnicoId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        // Incrementar las fallas del técnico por 1
+        db.execSQL("UPDATE " + TABLE_USUARIOS + " SET " + COLUMN_FALLAS + " = " + COLUMN_FALLAS + " + 1 WHERE " + COLUMN_ID + " = ?", new Object[]{tecnicoId});
+
+        // Obtener la cantidad actual de fallas después de incrementarlas
+        Cursor cursor = db.rawQuery("SELECT " + COLUMN_FALLAS + " FROM " + TABLE_USUARIOS + " WHERE " + COLUMN_ID + " = ?", new String[]{String.valueOf(tecnicoId)});
+        if (cursor.moveToFirst()) {
+            int fallasActuales = cursor.getInt(0);
+
+            // Si las fallas llegan a 6, bloquear al técnico
+            if (fallasActuales >= 6) {
+                ContentValues values = new ContentValues();
+                values.put(COLUMN_BLOQUEADO, 1);  // Bloquear al técnico
+                db.update(TABLE_USUARIOS, values, COLUMN_ID + " = ?", new String[]{String.valueOf(tecnicoId)});
+                // Agregar un mensaje de log para seguimiento
+                Log.d("DatabaseHelper", "Técnico con ID " + tecnicoId + " bloqueado por alcanzar 6 fallas.");
+            }
+        }
+
+        cursor.close();
+        db.close();
+    }
+
 }

@@ -102,7 +102,7 @@ public class TecnicoActivity extends AppCompatActivity {
             }
         });
 
-        // Evento para liberar un ticket
+// Evento para liberar un ticket
         btnLiberarTicket.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -115,6 +115,8 @@ public class TecnicoActivity extends AppCompatActivity {
                 }
             }
         });
+
+
 
         // Evento para seleccionar un ticket de la lista
         listViewTickets.setOnItemClickListener(new AdapterView.OnItemClickListener() {
